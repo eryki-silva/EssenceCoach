@@ -1,0 +1,11 @@
+.env
+.gemini-key.windows
+.gemini-key.windows.tmp
+node_modules/
+coverage/
+*.log
+.runtime/
+.runtime-m2/
+.replays/
+
+docs/privado/

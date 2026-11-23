@@ -1,0 +1,19 @@
+# Exclude local credentials, replays and toolchains from any Vercel upload.
+.env
+.env.*
+!.env.example
+.gemini-key.windows
+.gemini-key.windows.*
+.runtime
+.runtime/**
+.runtime-m2
+.runtime-m2/**
+.replays
+.replays/**
+node_modules
+coverage
+.git
+.codex
+.agents
+docs/privado
+*.log
