@@ -19,8 +19,15 @@ export function createCloudHandler({env=process.env,fetcher=fetch}={}){
  const service=createService({env,fetcher,settings,replayStore:cloudReplayStore()});
  return createApp(service,settings).listeners('request')[0];
 }
+export function configurationIssue(env=process.env){
+ if(!(env.GEMINI_API_KEY||env.GOOGLE_API_KEY||'').trim())return 'GEMINI_API_KEY está vazia ou não foi aplicada em Production.';
+ if((env.APP_ACCESS_PASSWORD||'').length<16)return 'APP_ACCESS_PASSWORD precisa ter pelo menos 16 caracteres no campo Value.';
+ if(/change-me|senha-aqui/i.test(env.APP_ACCESS_PASSWORD))return 'APP_ACCESS_PASSWORD ainda contém um texto de exemplo. Defina sua senha no campo Value.';
+ try{cloudSettings(env);}catch{return 'Confira APP_ORIGIN, PORT e as opções de ambiente da publicação.';}
+ return 'Não foi possível inicializar a API. Consulte os logs de runtime da Vercel.';
+}
 let handler;
 export default async function entry(req,res){
  try{handler??=createCloudHandler();return await handler(req,res);}
- catch{sendJson(res,{error:'A publicação precisa das variáveis GEMINI_API_KEY e APP_ACCESS_PASSWORD configuradas na Vercel.'},503,securityHeaders(true));}
+ catch{sendJson(res,{error:configurationIssue(),code:'APP_CONFIGURATION_ERROR'},503,securityHeaders(true));}
 }

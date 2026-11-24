@@ -21,3 +21,10 @@ test('adaptador atende health, protege consultas e aceita corpo Vercel sem expor
  result=await request(server,'/api/health',{Host:'evil.example'});assert.equal(result.status,403);
  result=await request(server,'/api/health',{Host:'preview-test.vercel.app'});assert.equal(result.status,200);
 });
+
+test('diagnóstico de configuração identifica o campo sem expor valores secretos',async()=>{
+ const {configurationIssue}=await import('../api/index.mjs');
+ assert.match(configurationIssue({}),/GEMINI_API_KEY/);
+ const short={...env,APP_ACCESS_PASSWORD:'secret-short'};assert.match(configurationIssue(short),/16 caracteres/);assert(!configurationIssue(short).includes(short.APP_ACCESS_PASSWORD));
+ assert(!configurationIssue(env).includes(env.GEMINI_API_KEY));
+});
