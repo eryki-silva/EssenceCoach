@@ -7,11 +7,11 @@ O diretório `api/index.mjs` adapta a aplicação Node para Vercel Functions. `v
 Configure em Production:
 
 - `GEMINI_API_KEY`: chave do servidor, nunca no frontend ou Git.
-- `APP_ACCESS_PASSWORD`: senha com no mínimo 16 caracteres. Login HTTP Basic: usuário `coach`.
+- A versão pública não exige `APP_ACCESS_PASSWORD`. A variável antiga pode permanecer na Vercel, mas não controla o acesso ao site.
 - `APP_ORIGIN`: opcional; padrão `https://essencecoach.vercel.app`. Ajuste se usar domínio próprio.
 - `GEMINI_MODEL`: opcional, descoberta automática quando vazio.
 
-As páginas e assets são públicos. A API exige autenticação, exceto health. A lista de hosts inclui somente a origem de produção e as URLs de deployment fornecidas pela Vercel. Sem os segredos, a API responde 503 sem expor valores ou detalhes internos.
+As páginas e assets são públicos. A API aceita acesso público, sem login, conforme solicitado. Os limites de frequência e concorrência são locais a cada instância da função e não constituem uma cota global entre instâncias. As análises usam a cota da chave Gemini do servidor. A lista de hosts inclui somente a origem de produção e as URLs de deployment fornecidas pela Vercel. Sem os segredos, a API responde 503 sem expor valores ou detalhes internos.
 
 A versão Vercel consulta OpenDota e gera aulas Gemini. O parser Java, uploads de .dem, reprodução local e rota de farm da partida inteira dependem da instalação Windows ou de um servidor de replay separado. A versão hospedada informa essa limitação em vez de inventar posições ou tentar gravar no filesystem da função. Ela não envia seus arquivos locais para a Vercel.
 

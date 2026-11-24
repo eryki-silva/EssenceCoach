@@ -4,7 +4,7 @@ import {loadSettings} from '../backend/config/settings.mjs';
 import {AppError} from '../backend/shared/errors.mjs';
 import {securityHeaders,sendJson} from '../backend/shared/http.mjs';
 export function cloudSettings(env=process.env){
- const settings=loadSettings({...env,DOTA_ENV:'production',APP_ORIGIN:env.APP_ORIGIN||'https://essencecoach.vercel.app'});
+ const settings=loadSettings({...env,DOTA_ENV:'production',APP_ORIGIN:env.APP_ORIGIN||'https://essencecoach.vercel.app'},{publicAccess:true});
  const allowedOrigins=[settings.origin];
  for(const host of [env.VERCEL_URL,env.VERCEL_PROJECT_PRODUCTION_URL])if(host&&/^[a-z0-9.-]+\.vercel\.app$/.test(host))allowedOrigins.push('https://'+host);
  return {...settings,allowedOrigins};
@@ -21,8 +21,6 @@ export function createCloudHandler({env=process.env,fetcher=fetch}={}){
 }
 export function configurationIssue(env=process.env){
  if(!(env.GEMINI_API_KEY||env.GOOGLE_API_KEY||'').trim())return 'GEMINI_API_KEY está vazia ou não foi aplicada em Production.';
- if((env.APP_ACCESS_PASSWORD||'').length<16)return 'APP_ACCESS_PASSWORD precisa ter pelo menos 16 caracteres no campo Value.';
- if(/change-me|senha-aqui/i.test(env.APP_ACCESS_PASSWORD))return 'APP_ACCESS_PASSWORD ainda contém um texto de exemplo. Defina sua senha no campo Value.';
  try{cloudSettings(env);}catch{return 'Confira APP_ORIGIN, PORT e as opções de ambiente da publicação.';}
  return 'Não foi possível inicializar a API. Consulte os logs de runtime da Vercel.';
 }
