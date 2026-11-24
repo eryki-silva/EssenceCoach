@@ -1,3 +1,4 @@
+import {geminiFailureMessage} from '../../shared/gemini-errors.mjs';
 import {buildFarmRoute} from '../matches/farm-route.mjs';
 import {buildDecisionBriefs,coachingFramework} from './decisions.mjs';
 import {publicDataFallback} from '../../shared/public-transport.mjs';
@@ -55,6 +56,8 @@ export function createService({ fetcher = fetch, env = process.env, now = () => 
     if (!response.ok) {
       const host = new URL(url).hostname;
       if (host === 'generativelanguage.googleapis.com') {
+        let payload;try{payload=await response.json();}catch{/* Use the safe HTTP fallback. */}
+        const specific=geminiFailureMessage(payload);if(specific)throw new AppError(specific,response.status);
         const messages = {
           400: 'O Google rejeitou a chave ou os parâmetros da solicitação (HTTP 400). Confira a chave do AI Studio e o modelo configurado.',
           401: 'O Google recusou a autenticação (HTTP 401). Reinicie e informe sua chave do AI Studio.',
