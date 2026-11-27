@@ -11,7 +11,7 @@ const production={DOTA_ENV:'production',APP_ORIGIN:'https://coach.example.com',A
 test('configuração local mantém chave opcional; produção falha antes de iniciar sem requisitos',()=>{
  assert.equal(loadSettings({}).host,'127.0.0.1');
  assert.throws(()=>loadSettings({HOST:'0.0.0.0'}),/loopback/);
- for(const key of ['APP_ORIGIN','APP_ACCESS_PASSWORD','GEMINI_API_KEY'])assert.throws(()=>loadSettings({...production,[key]:''}));
+ for(const key of ['APP_ORIGIN','APP_ACCESS_PASSWORD'])assert.throws(()=>loadSettings({...production,[key]:''}));
  assert.throws(()=>loadSettings({...production,APP_ORIGIN:'https://coach.example.com/path'}));
  assert.throws(()=>loadSettings({PORT:'NaN'}));
  assert.equal(loadSettings(production).host,'0.0.0.0');

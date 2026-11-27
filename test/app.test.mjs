@@ -28,18 +28,7 @@ test('normaliza somente espaços externos e rejeita credenciais com caracteres i
   const error = connectionError('api.openai.com', { message: 'Headers: invalid header value Bearer sensitive-value' });
   assert.equal(error.status, 400); assert(!error.message.includes('sensitive-value'));
 });
-test('teste Gemini consulta o modelo sem gerar conteúdo e distingue falhas', async () => {
-  let call;
-  const service = createService({ env: { GEMINI_API_KEY: 'test-key' }, fetcher: async (url, options) => { call = { url, options }; return jsonResponse({ models: [{ name: 'models/gemini-3.1-flash-lite', supportedGenerationMethods: ['generateContent'] }] }); } });
-  assert.equal((await service.checkGemini()).ok, true);
-  assert(call.url.includes('/models?pageSize='));
-  assert.equal(call.options.body, undefined);
-  assert.equal(call.options.headers['x-goog-api-key'], 'test-key');
-  for (const status of [400, 401, 403, 404, 429]) {
-    const failed = createService({ env: { GEMINI_API_KEY: 'test-key' }, fetcher: async () => jsonResponse({error: { message: 'sensitive-secret' }}, status) });
-    await assert.rejects(() => failed.checkGemini(), error => error.status === status && !error.message.includes('sensitive-secret'));
-  }
-});
+
 test('diagnóstico distingue DNS, certificado, timeout e interrupção sem expor erros ou chaves', () => {
   for (const [code, expected] of [['ENOTFOUND', /DNS/], ['UNABLE_TO_GET_ISSUER_CERT_LOCALLY', /certificado TLS/], ['UND_ERR_CONNECT_TIMEOUT', /Tempo limite/], ['ECONNRESET', /interrompida/], ['ECONNREFUSED', /recusada/]]) {
     const result = connectionError('api.openai.com', { cause: { code, message: 'secret-do-not-print' } });
@@ -109,52 +98,34 @@ test('recusa relatório sem evidências válidas, tipos incorretos e timestamps 
     const a = structuredClone(validAnalysis); mutate(a); assert.throws(() => validateAnalysis(a, evidence));
   }
 });
-test('análise completa envia evidências ao modelo com esquema estrito, sem nomes e com chave somente no cabeçalho', async () => {
-  const { service, calls } = fixture();
-  const report = await service.analyze('8123456789', 0, 'Farm e itens');
-  assert.equal(report.hero, 'Anti-Mage'); assert.equal(report.context.latest_known_patch.name, '7.41');
-  assert.equal(report.context.match_patch.name, '7.41'); assert.equal(report.context.sources.length, 7);
-  const call = calls.find(c => c.url.endsWith(':generateContent'));
-  const body = JSON.parse(call.options.body), payload = body.contents[0].parts[0].text, input = JSON.parse(payload);
-  assert.equal(call.options.headers['x-goog-api-key'], 'test-only-not-real'); assert(!call.url.includes('test-only-not-real')); assert.equal(body.generationConfig.responseMimeType, 'application/json'); assert.equal(body.generationConfig.responseJsonSchema.additionalProperties, false);
-  assert.equal(input.focus, 'Farm e itens'); assert.equal(input.won, true);
-  assert(!payload.includes('personaname')); assert(!payload.includes('132959615'));
-  assert(!payload.includes('onerror'));
-  assert(input.evidence.some(e => e.kind === 'purchase_log'));
-  assert(report.replay_review);
-  assert.deepEqual(input.replay_review.phases,report.replay_review.phases);
-  assert(!('priorities' in input.replay_review)); // Do not feed canned advice back to the teacher.
-  assert.equal(report.analysis.lessons.length,1);
-  assert(report.analysis.lessons[0].application);
-  assert.equal(report.analysis.findings.length,0); // Generic fixture advice is omitted.
-  assert(report.context.warnings.some(w=>w.includes('omitida')));
-  assert.match(report.analysis.patch_context,/Patch da partida no catálogo/);
+test('análise usa regras com evidências válidas e não transmite dados a modelo',async()=>{
+ const {service,calls}=fixture({key:false});const report=await service.analyze('8123456789',0,'farm');
+ assert.equal(report.engine.type,'deterministic');assert.equal(report.hero,'Anti-Mage');assert(report.analysis.lessons.length>=1);validateAnalysis(report.analysis,report.evidence);
+ assert(!calls.some(c=>/googleapis|generateContent/.test(c.url)));assert.equal(report.context.hero_analysis.sample_size,0);
 });
+
 test('fonte de meta indisponível gera aviso sem inventar dados', async () => {
   const { service } = fixture({ failMeta: true });
   const report = await service.analyze('8123456789', 0);
-  assert.equal(report.context.meta, null);
-  assert(report.context.warnings.some(w => w.startsWith('meta:')));
+  assert.equal(report.context.meta, undefined);
+  assert.equal(report.context.hero_analysis.sample_size,0);
 });
 
 test('a aula recebe contexto espacial real com evidência e perspectiva do observador',async()=>{
  const replayData={source:'parser teste',capabilities:{hero_resources:true,cooldowns:true},limitations:['Visibilidade desconhecida'],samples:[{time:599,player_slot:0,hero_id:1,x:100,y:100,life_state:0},{time:599,player_slot:128,hero_id:2,x:110,y:100,life_state:0}],states:[{time:599,player_slot:0,mana:20,health:300,abilities:[{name:'antimage_blink',level:1,slot:1,mana_cost:60,cooldown_remaining:4}],items:[]}],events:[{type:'DOTA_COMBATLOG_DEATH',time:600,targetname:'npc_dota_hero_antimage',targethero:true}]};
  const {service,calls}=fixture({replayData});const report=await service.analyze('8123456789',0);
  assert.equal(report.availability.spatial_replay,true);
- const input=JSON.parse(JSON.parse(calls.find(c=>c.url.endsWith(':generateContent')).options.body).contents[0].parts[0].text);
+ const input=report;
  const spatial=input.evidence.find(e=>e.kind==='replay_decision_context');assert.equal(spatial.time,600);assert.equal(spatial.data.other_heroes[0].hero,'Axe');assert.equal(spatial.data.other_heroes[0].distance_units,1280);assert.match(spatial.data.perspective,/desconhecida/);
  assert.equal(spatial.data.self.resources.mana,20);assert.equal(spatial.data.self.resources.abilities[0].cooldown_remaining,4);assert.equal(spatial.data.self.resources.abilities[0].mana_sufficient,false);
- assert(report.context.replay_context.moments.some(m=>m.evidence_id===spatial.id));
+ assert(!calls.some(c=>c.url.includes('googleapis')));
  assert.equal(input.context.decision_briefs[0].evidence_id,spatial.id);
  assert.deepEqual(input.context.decision_briefs[0].resources[0].restrictions,['cooldown','insufficient_mana']);
- assert.equal(input.context.coaching_framework.version,1);
+
  assert.equal(report.farm_route.available,true);assert.equal(report.farm_route.player_slot,0);assert.equal(report.farm_route.points.length,1);
 });
-test('chave ausente não produz análise simulada nem chama serviços', async () => {
-  const { service, calls } = fixture({ key: false });
-  await assert.rejects(() => service.analyze('8123456789', 0), error => error.status === 503);
-  assert.equal(calls.length, 0);
-});
+test('chave ausente não impede o motor determinístico',async()=>{const {service,calls}=fixture({key:false});const report=await service.analyze('8123456789',0);assert.equal(report.engine.type,'deterministic');assert(!calls.some(c=>/googleapis/.test(c.url)));});
+
 test('valida jogador antes de chamar Google Gemini', async () => {
   const { service, calls } = fixture();
   await assert.rejects(() => service.analyze('8123456789', 99), /Jogador não encontrado/);
@@ -174,12 +145,7 @@ test('falha de rede, limite e autenticação têm erros seguros', async () => {
   const service = createService({ fetcher: async () => { throw Error('secret-value'); } });
   await assert.rejects(() => service.matchView('8123456789'), /Não foi possível acessar api.opendota.com/);
 });
-test('resposta Google Gemini incompleta ou malformada não vira relatório', async () => {
-  for (const response of [{ candidates: [{ finishReason: 'MAX_TOKENS' }] }, { candidates: [] }, { candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '{"summary":"incompleto"}' }] } }] }]) {
-    const { service } = fixture({ mutateResponse: () => response });
-    await assert.rejects(() => service.analyze('8123456789', 0), error => error.status === 502);
-  }
-});
+test('resposta de um modelo externo não participa da análise por código',async()=>{const {service,calls}=fixture({mutateResponse:()=>({})});const report=await service.analyze('8123456789',0);assert.equal(report.engine.type,'deterministic');assert(!calls.some(c=>/googleapis/.test(c.url)));});
 
 function httpCall(server, path, { method = 'GET', body, headers = {} } = {}) {
   return new Promise((resolve, reject) => {
@@ -193,10 +159,10 @@ test('HTTP: interface, endpoints, consentimento e validação', async t => {
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve)); t.after(() => server.close());
   const home = await httpCall(server, '/'); assert.equal(home.status, 200); assert.match(home.text, /76561198093225343/);
   assert.match(home.headers['content-security-policy'], /default-src 'self'/);
-  assert.equal((await httpCall(server, '/api/health')).json().gemini_configured, true);
+  assert.equal((await httpCall(server, '/api/health')).json().analysis_available, true);
   assert.equal((await httpCall(server, '/api/matches/8123456789?account=132959615')).json().selected_slot, 0);
   const path = '/api/matches/8123456789/analyze';
-  assert.equal((await httpCall(server, path, { method: 'POST', body: { player_slot: 0 } })).status, 400);
+  assert.equal((await httpCall(server, path, { method: 'POST', body: { player_slot: 0 } })).status, 200);
   assert.equal((await httpCall(server, path, { method: 'POST', body: { player_slot: 0, consent: true } })).status, 200);
   assert.equal((await httpCall(server, path, { method: 'POST', body: '{' })).status, 400);
   assert.equal((await httpCall(server, path, { method: 'POST', body: null })).status, 400);
@@ -215,20 +181,7 @@ test('HTTP: limita solicitações de processamento', async t => {
   assert.equal((await httpCall(server, '/api/matches/8123456789/parse', { method: 'POST', body: {} })).status, 429);
 });
 
-test('descobre modelo paginado e ignora modelo antigo indisponível e modelos de imagem', async () => {
- const calls=[];
- const service=createService({env:{GEMINI_API_KEY:'secret',GEMINI_MODEL:'gemini-retired'},fetcher:async url=>{
-  calls.push(url);
-  return jsonResponse(url.includes('pageToken=next') ? {models:[{name:'models/gemini-3.1-flash-lite',supportedGenerationMethods:['generateContent']}]} : {models:[{name:'models/gemini-image',supportedGenerationMethods:['generateContent']}],nextPageToken:'next'});
- }});
- assert.match((await service.checkGemini()).message,/gemini-3.1-flash-lite/);
- assert.equal(calls.length,2);
- await service.checkGemini();assert.equal(calls.length,2);
-});
-test('não seleciona modelos que só geram imagens ou embeddings', async()=>{
- const service=createService({env:{GEMINI_API_KEY:'secret'},fetcher:async()=>jsonResponse({models:[{name:'models/gemini-image',supportedGenerationMethods:['generateContent']},{name:'models/gemini-flash',supportedGenerationMethods:['embedContent']}]})});
- await assert.rejects(()=>service.checkGemini(),/Nenhum modelo/);
-});
+
 
 test('resumos de fase usam intervalos reais e não inventam métricas ausentes',()=>{
  const p={player_slot:0,kills:2,assists:3,times:[0,300,600,900,1200],gold_t:[0,900,2400,3000,3600],lh_t:[0,20,50,60,70]};

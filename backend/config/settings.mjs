@@ -11,7 +11,6 @@ export function loadSettings(env=process.env,{publicAccess=false}={}){
   if(production){
     if(!origin?.startsWith('https://'))throw new Error('Produção exige APP_ORIGIN com HTTPS.');
     if(!publicAccess&&(accessPassword.length<16||/change-me|senha-aqui/i.test(accessPassword)))throw new Error('Produção exige APP_ACCESS_PASSWORD com pelo menos 16 caracteres.');
-    if(!(env.GEMINI_API_KEY||env.GOOGLE_API_KEY||'').trim())throw new Error('Produção exige GEMINI_API_KEY ou GOOGLE_API_KEY.');
   }
   const logLevel=env.LOG_LEVEL||(production?'info':'warn');if(!['debug','info','warn','error','silent'].includes(logLevel))throw new Error('LOG_LEVEL inválido.');
   const host=env.HOST||(production?'0.0.0.0':'127.0.0.1');

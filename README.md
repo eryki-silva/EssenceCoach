@@ -1,3 +1,7 @@
+## Motor atual: análise pelo código
+
+A análise não usa Gemini ou outro modelo de IA. Veja [as regras e limites](docs/publico/motor-de-regras.md). A versão online é pública, sem senha; a rota completa exige o replay processado na instalação local.
+
 # EssenceCoach
 
 Publicação Vercel: [configuração e limitações](docs/publico/vercel.md).

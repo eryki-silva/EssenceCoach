@@ -10,7 +10,7 @@ export function cloudSettings(env=process.env){
  return {...settings,allowedOrigins};
 }
 export function cloudReplayStore(){
- const message='O processamento completo de replay e a rota de farm estão disponíveis na instalação Windows. A Vercel executa a aula com os eventos públicos do OpenDota; o parser Java precisa de um servidor próprio.';
+ const message='O processamento completo de replay e a rota de farm estão disponíveis na instalação Windows. A Vercel calcula a análise por regras com os eventos públicos do OpenDota; o parser Java precisa de um servidor próprio.';
  const unavailable=async()=>{throw new AppError(message,503);};
  return {available:async()=>false,data:async()=>null,status:async()=>({state:'unavailable',message}),download:unavailable,upload:unavailable};
 }
@@ -20,7 +20,6 @@ export function createCloudHandler({env=process.env,fetcher=fetch}={}){
  return createApp(service,settings).listeners('request')[0];
 }
 export function configurationIssue(env=process.env){
- if(!(env.GEMINI_API_KEY||env.GOOGLE_API_KEY||'').trim())return 'GEMINI_API_KEY está vazia ou não foi aplicada em Production.';
  try{cloudSettings(env);}catch{return 'Confira APP_ORIGIN, PORT e as opções de ambiente da publicação.';}
  return 'Não foi possível inicializar a API. Consulte os logs de runtime da Vercel.';
 }

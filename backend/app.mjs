@@ -54,7 +54,7 @@ export function createApp(service = createService(), settings=loadSettings()) {
         const data = await readFile(new URL(name, publicRoot));
         res.writeHead(200, { ...headers, 'Content-Type': type }); res.end(data); return;
       }
-      if (req.method === 'GET' && url.pathname === '/api/health') return json({ ok: true, system:system.name, version:system.version, mode:settings.mode, gemini_configured: service.configured() });
+      if (req.method === 'GET' && url.pathname === '/api/health') return json({ ok: true, system:system.name, version:system.version, mode:settings.mode, analysis_engine:'deterministic', analysis_available:true, gemini_configured:false });
       if (req.method === 'POST' && url.pathname === '/api/gemini/check') {
         await body(req);
         const bucket = `${req.socket.remoteAddress}:openai-check`;
@@ -91,7 +91,7 @@ export function createApp(service = createService(), settings=loadSettings()) {
         const input = await body(req);
         if (!input || typeof input !== 'object' || Array.isArray(input)) throw new AppError('Corpo inválido.');
         if (typeof input.focus !== 'undefined' && (typeof input.focus !== 'string' || input.focus.length > 600)) throw new AppError('O foco deve ter até 600 caracteres.');
-        if (input.consent !== true) throw new AppError('Autorize o envio dos dados da partida ao Google Gemini antes de analisar.');
+
         if (analysesInProgress >= 2) throw new AppError('Há análises em andamento. Aguarde.', 429);
         analysesInProgress++;
         try { return json(await service.analyze(id, input.player_slot, input.focus)); }

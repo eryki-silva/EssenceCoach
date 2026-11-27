@@ -21,6 +21,7 @@ export function renderReport(report) {
   header.append(titles, el('span', 'badge', `Confiança ${a.confidence}`));
   intro.append(header); prose(intro,a.summary,'report-summary');
   intro.append(el('p','report-context',report.coverage));root.append(intro);
+  if(report.metrics?.length){const progress=section('Seu farm ao longo da partida');const grid=el('div','report-grid');for(const m of report.metrics){const cell=el('div','metric');cell.append(el('span','',m.label),el('b','',m.value),el('span','',m.detail));grid.append(cell);}progress.append(grid);root.append(progress);}
   const plan=section('O plano para este jogo');prose(plan,a.game_plan || a.summary);root.append(plan);
   root.append(createFarmRoute(report.farm_route,report.hero));
   if (a.lessons?.length) {

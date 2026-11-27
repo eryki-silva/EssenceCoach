@@ -17,10 +17,10 @@ call :try_node "%LOCALAPPDATA%\Volta\bin\node.exe"
 if not defined DOTA_NODE_EXEC goto :node_missing
 echo Node encontrado em: "%DOTA_NODE_EXEC%"
 "%DOTA_NODE_EXEC%" --version
-echo A chave salva sera reutilizada. Na primeira vez, voce pode escolher Lembrar.
+echo Analise pelo codigo: nenhuma chave de IA e necessaria.
 echo Nao feche esta janela enquanto estiver usando o aplicativo.
 if /I "%~1"=="--trocar-chave" goto :change_key
-powershell -NoProfile -STA -ExecutionPolicy Bypass -File "%~dp0entrada-chave.ps1"
+"%DOTA_NODE_EXEC%" --env-file-if-exists=.env --use-env-proxy launch.mjs
 goto :after_key
 :change_key
 powershell -NoProfile -STA -ExecutionPolicy Bypass -File "%~dp0entrada-chave.ps1" -TrocarChave
