@@ -20,3 +20,9 @@ O objetivo é tornar os diagnósticos auditáveis. Mesmo um sistema determiníst
 Na Vercel, os eventos públicos do OpenDota sustentam a análise numérica e as aulas por regras. A rota de farm da partida inteira e estados espaciais dependem de um replay completo processado localmente. Sem isso, o relatório mostra a limitação e não inventa a rota.
 
 As chaves antigas foram preservadas, mas não são usadas pela análise. O iniciador Windows mantém a descoberta de Node corrigida e passa a abrir diretamente, sem solicitar chave.
+
+## Meta do Dota2ProTracker
+
+O link indicado pelo usuário em 27/11/2026 foi conferido no navegador. O serviço retornou 403 na consulta direta. Os termos publicados em https://dota2protracker.com/terms-of-service restringem extração automatizada, republicação e uso dos dados em aplicativos ou sistemas analíticos. Por isso, o relatório inclui o link de referência e os filtros (7000+ MMR, todas as posições, período de patch da fonte), sem copiar estatísticas, builds ou timings.
+
+Essa referência não afeta o diagnóstico por regras. Para integrar comparações de meta a partir dessa fonte, são necessários autorização e um mecanismo de acesso aprovado pelo provedor. Não há alegação de atualização automática ou de uma amostra D2PT importada.

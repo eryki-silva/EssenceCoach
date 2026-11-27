@@ -1,3 +1,4 @@
+import {metaReference} from '../meta/reference.mjs';
 import {analyzeByRules} from './engine.mjs';
 import {buildFarmRoute} from '../matches/farm-route.mjs';
 import {buildDecisionBriefs} from './decisions.mjs';
@@ -80,7 +81,7 @@ export function createService({ fetcher = fetch, env = process.env, now = () => 
     const results=await Promise.allSettled(Object.values(urls).map(url=>cached(url,3600000,{timeout:8000}))),values={},sources=[],warnings=[];
     Object.keys(urls).forEach((key,i)=>{if(results[i].status==='fulfilled'){values[key]=results[i].value;sources.push({name:key,url:urls[key],fetched_at:new Date(cache.get(urls[key]).at).toISOString()});}else warnings.push(key+': indisponível nesta consulta.');});
     const hero=values.heroes?.[player.hero_id]?.localized_name??'Herói '+player.hero_id;
-    const ctx={hero,match_patch:Array.isArray(values.patches)?values.patches.find(p=>p.id===match.patch):null,sources,warnings,hero_analysis:{sample_size:0,role:'Sem comparação externa; referência do próprio jogador.'}};
+    const ctx={hero,meta_reference:metaReference(hero),match_patch:Array.isArray(values.patches)?values.patches.find(p=>p.id===match.patch):null,sources,warnings,hero_analysis:{sample_size:0,role:'Sem comparação externa; referência do próprio jogador.'}};
     const {evidence,availability}=buildEvidence(match,player,values.items??{});
     const fullReplay=await replays.data(id);
     if(fullReplay){spatialEvidence(fullReplay,player,values.heroes??{},evidence);sources.push({name:'replay local',url:'https://github.com/odota/parser',fetched_at:fullReplay.provenance?.parsed_at??new Date(now()).toISOString()});}

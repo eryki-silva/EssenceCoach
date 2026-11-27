@@ -53,6 +53,8 @@ export function renderReport(report) {
   }
   if (a.strengths.length) { const good=section('O que vale repetir');good.append(list(a.strengths));root.append(good); }
   if (a.training_plan.length) { const practice=section('Para levar à próxima partida');practice.append(list(a.training_plan));root.append(practice); }
+  const reference=report.context.meta_reference;
+  if(reference){const meta=section('Referência de meta');meta.append(el('p','report-context',reference.population),el('p','report-context',reference.note));for(const [label,url]of [['Consultar meta no Dota2ProTracker',reference.url],['Consultar '+report.hero+' na fonte',reference.hero_url]]){const link=el('a','source-link',label);link.href=safeLink(url);link.target='_blank';link.rel='noopener noreferrer';meta.append(link);}meta.append(el('p','hint','Disponibilidade conferida em '+reference.checked_at+' · sem importação automática.'));root.append(meta);}
   const context = section('Fontes e limites da análise');
   const matchSource=el('a','source-link','OpenDota · eventos da partida #'+report.match_id);matchSource.href='https://www.opendota.com/matches/'+encodeURIComponent(report.match_id);matchSource.target='_blank';matchSource.rel='noopener noreferrer';context.append(matchSource);
   context.append(el('p', 'report-context', report.context.hero_analysis?.sample_size ? report.context.hero_analysis.sample_size + ' partidas comparáveis. Os detalhes estão abaixo.' : 'Sem amostra externa comparável. A aula usa os eventos desta partida.'));
