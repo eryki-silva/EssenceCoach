@@ -46,7 +46,7 @@ export function createApp(service = createService(), settings=loadSettings()) {
       if(!hostAllowed)throw new AppError('Host não autorizado.',403);
       if(req.headers.origin&&req.headers.origin!==expectedOrigin)throw new AppError('Origem não autorizada.',403);
       if(settings.production&&!settings.publicAccess&&url.pathname!=='/api/health'&&!passwordAccepted(req.headers.authorization,settings.accessPassword)) {
-        headers['WWW-Authenticate']='Basic realm="Ancient Dota Coach", charset="UTF-8"';return json({error:'Entre com o usuário coach e a senha configurada para acessar.'},401);
+        headers['WWW-Authenticate']='Basic realm="Essence Dota Coach", charset="UTF-8"';return json({error:'Entre com o usuário coach e a senha configurada para acessar.'},401);
       }
       if (req.headers['sec-fetch-site'] === 'cross-site') throw new AppError('Solicitação externa bloqueada.', 403);
       if (req.method === 'GET' && assets[url.pathname]) {

@@ -1,6 +1,6 @@
 import {readFileSync} from 'node:fs';
 const pkg=JSON.parse(readFileSync(new URL('../../package.json',import.meta.url),'utf8'));
-export const system=Object.freeze({name:'Ancient · Dota Coach',version:pkg.version});
+export const system=Object.freeze({name:'Essence · Dota Coach',version:pkg.version});
 function integer(env,key,fallback,min,max){const raw=env[key];const n=raw===undefined||raw===''?fallback:Number(raw);if(!Number.isInteger(n)||n<min||n>max)throw new Error(`${key} inválido.`);return n;}
 export function loadSettings(env=process.env,{publicAccess=false}={}){
   const mode=env.DOTA_ENV||'local';if(!['local','production','test'].includes(mode))throw new Error('DOTA_ENV deve ser local, test ou production.');
