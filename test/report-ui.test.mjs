@@ -35,4 +35,8 @@ test('relatório ensina em prosa, mantém eventos automáticos recolhidos e expo
  assert(technical);assert(!technical.open);
  const md=vm.runInContext('markdown(fixture)',context);assert.match(md,/500 de cura/);assert.match(md,/E2/);
  assert.match(md,/eu aproximaria a unidade/);assert(!md.includes('Revise sua entrada na luta'));
+ context.fixture.context.performance={rows:[{label:'Ouro por minuto',observed:682,median:572,delta:110}],scope:'Sem filtro de posição e patch; amostra não informada.'};
+ context.fixture.context.hero_analysis={sample_size:1,role:'mid provável',window_end:'2026-11-27',window_start:'2026-11-13',limitations:[],farm:[{time:600,observed:50,median:70,min:60,max:80,sample_size:2}],item_timings:[],matches:[]};
+ vm.runInContext('renderReport(fixture)',context);
+ assert.match(prose(root),/Mediana agregada: 572/);assert.match(prose(root),/você 50 LH/);assert.match(prose(root),/Amostra inferior a cinco/);
 });

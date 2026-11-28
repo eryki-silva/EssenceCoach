@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import {publicDataUrl,publicDataFallback} from '../backend/shared/public-transport.mjs';
 test('transporte alternativo permite somente dados públicos e remove chave OpenDota',()=>{
  assert.equal(publicDataUrl('https://api.opendota.com/api/matches/9101912991?api_key=private'),'https://api.opendota.com/api/matches/9101912991');
+ assert.equal(publicDataUrl('https://api.opendota.com/api/benchmarks?hero_id=1&api_key=private'),'https://api.opendota.com/api/benchmarks?hero_id=1');
+ assert.equal(publicDataUrl('https://api.opendota.com/api/heroes/1/matches?api_key=private'),'https://api.opendota.com/api/heroes/1/matches');
+ assert.equal(publicDataUrl('https://api.opendota.com/api/benchmarks?hero_id=evil'),null);
  for(const url of ['https://generativelanguage.googleapis.com/v1beta/models','https://evil.example/api/matches/9101912991','http://api.opendota.com/api/matches/9101912991','https://api.opendota.com/api/request/9101912991','https://user:pass@api.opendota.com/api/matches/9101912991'])assert.equal(publicDataUrl(url),null);
 });
 test('Windows usa curl com TLS validado, limites e janela oculta sem propagar credenciais',async()=>{

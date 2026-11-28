@@ -32,15 +32,22 @@ export function compareHero({match, player, references, stats, evidence, now}) {
     const observed=evidence.filter(e=>e.kind==='purchase_log' && e.data.key===item && finite(e.time)).sort((a,b)=>a.time-b.time)[0];
     return {item,sample_size:times.length,denominator:purchaseCoverage,median_seconds:median(times),min_seconds:Math.min(...times),max_seconds:Math.max(...times),observed_seconds:observed?.time??null,evidence_id:observed?.id??null,delta_seconds:observed?observed.time-median(times):null};
   }).sort((a,b)=>b.sample_size-a.sample_size).slice(0,20);
+  // Exact minute samples only: do not interpolate across missing telemetry.
+  const farm=[];
+  for(const time of [600,1200,1800,2400]){
+    const values=rows.flatMap(({p})=>{const i=p.times?.indexOf(time)??-1;return i>=0&&finite(p.lh_t?.[i])?[p.lh_t[i]]:[];});
+    const i=player.times?.indexOf(time)??-1,observed=i>=0&&finite(player.lh_t?.[i])?player.lh_t[i]:null;
+    if(values.length)farm.push({time,sample_size:values.length,median:median(values),min:Math.min(...values),max:Math.max(...values),observed,delta:observed===null?null:observed-median(values)});
+  }
   return {hero_id:player.hero_id,role:roleOf(player),lane_role:player.lane_role??null,rank_tier:rank,rank_basis:'Faixa média da partida; não é o rank individual. Ausente: amostra mistura ranks.',rank_stats:rank && finite(stats?.[`${rank}_pick`]) ? {picks:stats[`${rank}_pick`],wins:stats[`${rank}_win`]??null,position_filtered:false,window:'Não informada pelo endpoint heroStats'}:null,
     sample_size:rows.length,purchase_coverage:purchaseCoverage,skill_coverage:skillCoverage,facet_coverage:facetCoverage,
     window_start:new Date(now-14*86400000).toISOString(),window_end:new Date(now).toISOString(),
     matches:rows.map(({m})=>({match_id:m.match_id,start_time:m.start_time,patch:m.patch,url:`https://www.opendota.com/matches/${m.match_id}`})),
     build_examples:rows.map(({m,p})=>({match_id:m.match_id,skills:p.ability_upgrades_arr??null,facet:p.hero_variant??null,purchases:Array.isArray(p.purchase_log)?p.purchase_log.filter(e=>typeof e.key==='string'&&finite(e.time)).sort((a,b)=>a.time-b.time).slice(0,40).map(e=>({item:e.key,time:e.time})):null})),
-    item_timings:itemTimings,
+    item_timings:itemTimings,farm,
     skills:[...skills].map(([key,count])=>{const [level,ability_id]=key.split(':').map(Number);return {level,ability_id,count,denominator:skillCoverage,observed:player.ability_upgrades_arr?.[level-1]??null};}),
     facets:[...facets].map(([variant,count])=>({variant,count,denominator:facetCoverage,observed:player.hero_variant??null})),
-    limitations:['Até seis partidas recentes do herói retornadas pelo OpenDota; amostra de conveniência, sujeita a falhas e viés de seleção.', 'Recorte exige mesmo patch numérico, modo, lobby e rota. Rota não distingue posições 1/5 e 3/4; subpatch não é garantido.', 'Compra não prova entrega, conclusão automática de receita ou uso. Timings usam primeira compra registrada e apenas compradores; ausência não significa erro.', 'Ordem de habilidades representa níveis, não timestamps. hero_variant é identificador de facet, sem assumir nome ou regras históricas.', 'Amostra pequena não sustenta melhor build, causalidade ou julgamento automático de atraso.']};
+    limitations:['Até seis partidas recentes do herói retornadas pelo OpenDota; amostra de conveniência, sujeita a falhas e viés de seleção.', 'Recorte exige mesmo patch numérico, modo, lobby e rota. Rota não distingue posições 1/5 e 3/4; subpatch não é garantido.', 'Compra não prova entrega, conclusão automática de receita ou uso. Timings usam primeira compra registrada e apenas compradores; ausência não significa erro.', 'Ordem de habilidades representa níveis, não timestamps. hero_variant é identificador de facet, sem assumir nome ou regras históricas.', 'Amostra pequena não sustenta melhor build, causalidade ou julgamento automático de atraso.', 'Farm usa LH acumulado em minutos exatos, sem interpolação. Mesma rota não garante mesma função, adversários ou acesso aos recursos. Referências dos últimos 14 dias podem não representar partidas antigas.']};
 }
 
 export async function loadHeroReferences({cached,dotaUrl,match,player,stats,evidence,now,heroName}) {
@@ -49,7 +56,7 @@ export async function loadHeroReferences({cached,dotaUrl,match,player,stats,evid
   try {
     const url=dotaUrl(`/heroes/${player.hero_id}/matches`),list=await cached(url);record(url);
     if(!Array.isArray(list)) throw Error('schema');
-    const ids=[...new Set(list.filter(m=>Number.isSafeInteger(m.match_id)&&m.match_id!==match.match_id&&m.start_time>=now/1000-14*86400&&m.start_time<=now/1000).map(m=>m.match_id))].slice(0,6);
+    const ids=[...new Set(list.filter(m=>Number.isSafeInteger(m.match_id)&&m.match_id!==match.match_id&&m.start_time>=now/1000-14*86400&&m.start_time<=now/1000).sort((a,b)=>b.start_time-a.start_time).map(m=>m.match_id))].slice(0,6);
     for(let i=0;i<ids.length;i+=2) {
       const results=await Promise.allSettled(ids.slice(i,i+2).map(id=>cached(dotaUrl(`/matches/${id}`))));
       results.forEach((r,j)=>{if(r.status==='fulfilled'&&r.value?.match_id===ids[i+j]){references.push(r.value);record(`https://www.opendota.com/matches/${ids[i+j]}`);}else warnings.push('Uma referência do herói não pôde ser carregada.');});

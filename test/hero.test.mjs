@@ -28,3 +28,8 @@ test('fonte indisponível mantém transparência e não importa sites manuais',a
  assert.equal(r.analysis.sample_size,0);assert.equal(r.integrations.length,2);assert.equal(urls.length,1);assert(r.warnings.length>0);
  assert(!JSON.stringify(r).includes('api_key='));
 });
+test('farm compara minutos exatos sem interpolar e mantém denominador de cobertura',()=>{
+ const one=ref(1),two=ref(2);one.players[0].times=[600,1200];one.players[0].lh_t=[60,150];two.players[0].times=[600,1199];two.players[0].lh_t=[80,200];
+ const r=compare([one,two],{player:{...player,times:[600],lh_t:[50]}});
+ assert.deepEqual(r.farm[0],{time:600,sample_size:2,median:70,min:60,max:80,observed:50,delta:-20});assert.equal(r.farm[1].sample_size,1);assert.equal(r.farm[1].observed,null);
+});

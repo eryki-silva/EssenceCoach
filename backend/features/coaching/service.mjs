@@ -1,4 +1,6 @@
 import {metaReference} from '../meta/reference.mjs';
+import {loadHeroReferences} from '../meta/heroes.mjs';
+import {loadPerformance} from '../meta/performance.mjs';
 import {analyzeByRules} from './engine.mjs';
 import {buildFarmRoute} from '../matches/farm-route.mjs';
 import {buildDecisionBriefs} from './decisions.mjs';
@@ -23,7 +25,7 @@ export function createService({ fetcher = fetch, env = process.env, now = () => 
       // Windows native HTTPS can work when Node's network/certificate route fails.
       // Do not retry writes or Gemini generation (which may consume quota).
       if(!options.method || options.method==='GET') {
-        try { response=await publicDataFallback(url); } catch { /* Preserve the original safe diagnostic. */ }
+        try { response=await publicDataFallback(url,{timeoutMs:options.timeout??settings.externalTimeoutMs}); } catch { /* Preserve the original safe diagnostic. */ }
       }
       if(!response)throw connectionError(new URL(url).hostname,error);
     }
@@ -83,6 +85,13 @@ export function createService({ fetcher = fetch, env = process.env, now = () => 
     const hero=values.heroes?.[player.hero_id]?.localized_name??'Herói '+player.hero_id;
     const ctx={hero,meta_reference:metaReference(hero),match_patch:Array.isArray(values.patches)?values.patches.find(p=>p.id===match.patch):null,sources,warnings,hero_analysis:{sample_size:0,role:'Sem comparação externa; referência do próprio jogador.'}};
     const {evidence,availability}=buildEvidence(match,player,values.items??{});
+    const referenceOptions={cached:(url)=>cached(url,300000,{timeout:6000}),dotaUrl,match,player,now:now()};
+    const [references,performance]=await Promise.all([loadHeroReferences({...referenceOptions,stats:null,evidence,heroName:hero}),loadPerformance(referenceOptions)]);
+    ctx.hero_analysis=references.analysis;
+    const rank=ctx.hero_analysis.rank_tier;
+    if(rank&&Number.isFinite(performance.stats?.[`${rank}_pick`]))ctx.hero_analysis.rank_stats={picks:performance.stats[`${rank}_pick`],wins:performance.stats[`${rank}_win`]??null,position_filtered:false,window:'Janela não informada pelo endpoint heroStats; não filtrado pelo patch desta partida.'};
+    ctx.performance=performance.performance;
+    sources.push(...references.sources,...performance.sources);warnings.push(...references.warnings,...performance.warnings);
     const fullReplay=await replays.data(id);
     if(fullReplay){spatialEvidence(fullReplay,player,values.heroes??{},evidence);sources.push({name:'replay local',url:'https://github.com/odota/parser',fetched_at:fullReplay.provenance?.parsed_at??new Date(now()).toISOString()});}
     availability.spatial_replay=Boolean(fullReplay);

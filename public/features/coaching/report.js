@@ -54,6 +54,22 @@ export function renderReport(report) {
   if (a.strengths.length) { const good=section('O que vale repetir');good.append(list(a.strengths));root.append(good); }
   if (a.training_plan.length) { const practice=section('Para levar à próxima partida');practice.append(list(a.training_plan));root.append(practice); }
   const reference=report.context.meta_reference;
+  const deepMeta=report.context.hero_analysis,performance=report.context.performance;
+  if(deepMeta||performance){
+    const meta=section('Seu jogo diante das referências do OpenDota');
+    if(performance?.rows?.length){const grid=el('div','report-grid');for(const row of performance.rows){const cell=el('div','metric');cell.append(el('span','',row.label),el('b','',String(row.observed)),el('span','','Mediana agregada: '+Math.round(row.median*10)/10+' · diferença '+(row.delta>0?'+':'')+row.delta));grid.append(cell);}meta.append(grid,el('p','hint',performance.scope));}
+    const rankNames={1:'Herald',2:'Guardian',3:'Crusader',4:'Archon',5:'Legend',6:'Ancient',7:'Divine',8:'Immortal'};
+    const rank=deepMeta?.rank_stats;
+    if(rank&&rank.picks>0&&Number.isFinite(rank.wins))meta.append(el('p','report-context',report.hero+' · '+(rankNames[deepMeta.rank_tier]??'rank desconhecido')+': '+rank.picks+' escolhas, '+rank.wins+' vitórias ('+(100*rank.wins/rank.picks).toFixed(1)+'%). Faixa média da partida, não rank individual. '+rank.window+' Sem filtro de posição; taxa de vitória não demonstra a melhor build.'));
+    if(deepMeta){meta.append(el('p','report-context',deepMeta.sample_size+' partidas comparáveis · '+deepMeta.role+' · consultado em '+date(deepMeta.window_end)+'. Recorte: últimos 14 dias, mesmo herói, patch, modo, lobby e rota; rank médio igual quando disponível.'));
+      if(!deepMeta.sample_size)meta.append(el('p','hint','Não houve partida elegível no lote de até seis jogos recentes. A lista por herói pode trazer partidas competitivas, incompatíveis com seu lobby. Nenhuma build foi apresentada como referência equivalente.'));
+      if(deepMeta.sample_size>0&&deepMeta.sample_size<5)meta.append(el('p','hint','Amostra inferior a cinco jogadores: comparação exploratória, sem julgamento automático de atraso.'));
+      if(deepMeta.farm?.length)meta.append(el('h4','','Farm nos mesmos minutos'),list(deepMeta.farm.map(x=>time(x.time)+': você '+(x.observed??'sem registro')+' LH · mediana '+x.median+' LH · intervalo '+x.min+'–'+x.max+' · '+x.sample_size+' registros.')));
+      if(deepMeta.item_timings?.length)meta.append(el('h4','','Compras e timings observados'),list(deepMeta.item_timings.map(x=>x.item+': você '+(x.observed_seconds===null?'sem compra registrada':time(x.observed_seconds))+' · mediana '+time(x.median_seconds)+' · '+x.sample_size+'/'+x.denominator+' compradores.')));
+      if(deepMeta.skills?.length){const skills=el('details');skills.append(el('summary','','Ordem de habilidades e facets observadas'),list(deepMeta.skills.map(x=>'Nível '+x.level+' · habilidade ID '+x.ability_id+': '+x.count+'/'+x.denominator+' · sua habilidade '+(x.observed??'não registrada'))),list(deepMeta.facets.map(x=>'Facet ID '+x.variant+': '+x.count+'/'+x.denominator+' · sua facet '+(x.observed??'não registrada'))),el('p','hint','IDs brutos: não há mapeamento histórico confiável de nomes e efeitos neste recorte.'));meta.append(skills);}
+      for(const m of deepMeta.matches??[]){const link=el('a','source-link','Partida da amostra #'+m.match_id+' · '+date(new Date(m.start_time*1000).toISOString()));link.href=safeLink(m.url);link.target='_blank';link.rel='noopener noreferrer';meta.append(link);}
+    }root.append(meta);
+  }
   if(reference){const meta=section('Referência de meta');meta.append(el('p','report-context',reference.population),el('p','report-context',reference.note));for(const [label,url]of [['Consultar meta no Dota2ProTracker',reference.url],['Consultar '+report.hero+' na fonte',reference.hero_url]]){const link=el('a','source-link',label);link.href=safeLink(url);link.target='_blank';link.rel='noopener noreferrer';meta.append(link);}meta.append(el('p','hint','Disponibilidade conferida em '+reference.checked_at+' · sem importação automática.'));root.append(meta);}
   const context = section('Fontes e limites da análise');
   const matchSource=el('a','source-link','OpenDota · eventos da partida #'+report.match_id);matchSource.href='https://www.opendota.com/matches/'+encodeURIComponent(report.match_id);matchSource.target='_blank';matchSource.rel='noopener noreferrer';context.append(matchSource);

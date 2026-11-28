@@ -14,3 +14,9 @@ test('dados ausentes não viram zeros e um suporte não recebe meta de carry',()
 test('luta com saldo negativo não é classificada automaticamente como erro',()=>{
  const p={player_slot:0};const r=run(p,{teamfights:[{start:400,end:420,players:[{deaths:1,gold_delta:-250,damage:1000}]}]});assert(r.rules.some(r=>r.rule==='fight_survival'));assert.match(r.analysis.lessons[0].teaching,/-250/);assert.match(r.analysis.lessons[0].exception,/troca favorável/);
 });
+test('comparação de compra exige cinco compradores e cita evento e referências',()=>{
+ const player={player_slot:0,purchase_log:[{key:'blink',time:1200}]},match={duration:1800,players:[player]};
+ const execute=n=>{const {evidence}=buildEvidence(match,player);const id=evidence.find(e=>e.kind==='purchase_log').id;const result=analyzeByRules({match,player,hero:'Axe',evidence,context:{hero_analysis:{limitations:[],matches:[{match_id:99}],item_timings:[{item:'blink',sample_size:n,denominator:6,median_seconds:900,min_seconds:800,max_seconds:1000,observed_seconds:1200,delta_seconds:300,evidence_id:id}]}}});validateAnalysis(result.analysis,evidence);return {result,evidence};};
+ assert(!execute(4).result.rules.some(r=>r.rule==='reference_item'));
+ const {result,evidence}=execute(5);assert(result.rules.some(r=>r.rule==='reference_item'));assert.match(result.analysis.lessons[0].teaching,/300 segundos/);assert.match(result.analysis.lessons[0].exception,/suportes/i);assert.deepEqual(evidence.find(e=>e.kind==='reference_item_timing').data.match_ids,[99]);
+});

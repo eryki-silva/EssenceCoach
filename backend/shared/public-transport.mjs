@@ -7,6 +7,8 @@ export function publicDataUrl(value){
  const url=new URL(value);
  if(url.protocol!=='https:'||url.port||url.username||url.password||url.hash)return null;
  if(url.hostname==='api.opendota.com'&&/^\/api\/matches\/[1-9]\d{5,11}$/.test(url.pathname)){url.search='';return url.href;}
+ if(url.hostname==='api.opendota.com'&&(/^\/api\/heroes\/[1-9]\d{0,3}\/matches$/.test(url.pathname)||url.pathname==='/api/heroStats')){url.search='';return url.href;}
+ if(url.hostname==='api.opendota.com'&&url.pathname==='/api/benchmarks'&&/^[1-9]\d{0,3}$/.test(url.searchParams.get('hero_id')??'')){const hero=url.searchParams.get('hero_id');url.search='';url.searchParams.set('hero_id',hero);return url.href;}
  if(url.hostname==='raw.githubusercontent.com'&&url.pathname==='/odota/dotaconstants/master/build/heroes.json'&&!url.search)return url.href;
  return null;
 }
