@@ -26,8 +26,8 @@ test('relatório ensina em prosa, mantém eventos automáticos recolhidos e expo
  const mainText=prose(root);
  assert.match(mainText,/500 de cura/);assert.match(mainText,/300 de vida/);assert.match(mainText,/mana insuficiente/);assert.match(mainText,/Axe \(900 unidades\)/);assert.match(mainText,/Apoiar sem comprometer/);
  assert.match(mainText,/eu aproximaria a unidade/);assert.match(mainText,/acompanhar pode valer mais/);
- assert(mainText.indexOf('O plano para este jogo')<mainText.indexOf('Vamos pensar nas decisões'));
- assert(mainText.indexOf('Vamos pensar nas decisões')<mainText.indexOf('Fontes e limites'));
+ assert(mainText.indexOf('Seu foco para a próxima partida')<mainText.indexOf('Vamos rever sua partida'));
+ assert(mainText.indexOf('Vamos rever sua partida')<mainText.indexOf('Fontes e limites'));
  assert(!mainText.includes('Exercício e medida'));assert(!mainText.includes('Revise sua entrada na luta'));
  assert(!mainText.includes('%health_min%'));assert(!mainText.includes('Holy Persuasion'));assert(!mainText.includes('0/0'));
  const walk=n=>[n,...n.children.flatMap(walk)];
@@ -39,4 +39,5 @@ test('relatório ensina em prosa, mantém eventos automáticos recolhidos e expo
  context.fixture.context.hero_analysis={sample_size:1,role:'mid provável',window_end:'2026-11-27',window_start:'2026-11-13',limitations:[],farm:[{time:600,observed:50,median:70,min:60,max:80,sample_size:2}],item_timings:[],matches:[]};
  vm.runInContext('renderReport(fixture)',context);
  assert.match(prose(root),/Mediana agregada: 572/);assert.match(prose(root),/você 50 LH/);assert.match(prose(root),/Amostra inferior a cinco/);
+ const comparison=walk(root).find(n=>n.tagName==='details'&&n.children[0]?.textContent==='Comparar meus números com outras partidas');assert(comparison);assert(!comparison.open);
 });

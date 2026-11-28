@@ -17,21 +17,19 @@ export function renderReport(report) {
   const a = report.analysis;
   const intro = el('section', 'panel');
   const header = el('div', 'report-head'), titles = el('div');
-  titles.append(el('p', 'eyebrow', 'SEU RELATÓRIO'), el('h2', '', `${report.hero} · #${report.match_id}`), el('p', '', `Gerado em ${date(report.generated_at)} · ${report.model}`));
-  header.append(titles, el('span', 'badge', `Confiança ${a.confidence}`));
+  titles.append(el('p', 'eyebrow', 'SEU RELATÓRIO'), el('h2', '', `${report.hero} · #${report.match_id}`), el('p', '', `Sua aula · ${date(report.generated_at)}`));
+  header.append(titles);
   intro.append(header); prose(intro,a.summary,'report-summary');
-  intro.append(el('p','report-context',report.coverage));root.append(intro);
-  if(report.metrics?.length){const progress=section('Seu farm ao longo da partida');const grid=el('div','report-grid');for(const m of report.metrics){const cell=el('div','metric');cell.append(el('span','',m.label),el('b','',m.value),el('span','',m.detail));grid.append(cell);}progress.append(grid);root.append(progress);}
-  const plan=section('O plano para este jogo');prose(plan,a.game_plan || a.summary);root.append(plan);
-  root.append(createFarmRoute(report.farm_route,report.hero));
+  root.append(intro);
+  const plan=section('Seu foco para a próxima partida');prose(plan,a.game_plan || a.summary);root.append(plan);
   if (a.lessons?.length) {
-    const classroom=section('Vamos pensar nas decisões');
+    const classroom=section('Vamos rever sua partida');
     for (const lesson of a.lessons) {
       const article=el('article','coach-lesson');
-      article.append(el('h3','',lesson.title));
+      article.append(el('p','eyebrow',lesson.time===null?'PARA TREINAR':time(lesson.time)+' · REVEJA ESTE MOMENTO'),el('h3','',lesson.title));
       prose(article,lesson.teaching);
-      prose(article,lesson.application,'coach-prose coach-example');
-      prose(article,lesson.exception,'coach-prose coach-tradeoff');
+      article.append(el('h4','','O que tentar nesse momento'));prose(article,lesson.application,'coach-prose coach-example');
+      const nuance=el('details');nuance.append(el('summary','','Quando faria sentido jogar diferente?'));prose(nuance,lesson.exception,'coach-prose coach-tradeoff');article.append(nuance);
       if (lesson.time!==null && replaySession.data) { const watch=el('button','secondary','Ver este lance no mapa');watch.type='button';watch.addEventListener('click',()=>replaySession.view?.seek(Math.max(0,lesson.time-15)));article.append(watch); }
       const proof=el('details');proof.append(el('summary','',lesson.time===null?'O que os dados mostram':'O que os dados mostram · '+time(lesson.time)));
       const briefs=(report.context.decision_briefs??[]).filter(b=>lesson.evidence_ids.includes(b.evidence_id));
@@ -53,10 +51,12 @@ export function renderReport(report) {
   }
   if (a.strengths.length) { const good=section('O que vale repetir');good.append(list(a.strengths));root.append(good); }
   if (a.training_plan.length) { const practice=section('Para levar à próxima partida');practice.append(list(a.training_plan));root.append(practice); }
+  if(report.farm_route?.available)root.append(createFarmRoute(report.farm_route,report.hero));
+  if(report.metrics?.length){const progress=el('details','panel');progress.append(el('summary','','Conferir meu farm minuto a minuto'));const grid=el('div','report-grid');for(const m of report.metrics){const cell=el('div','metric');cell.append(el('span','',m.label),el('b','',m.value),el('span','',m.detail));grid.append(cell);}progress.append(grid);root.append(progress);}
   const reference=report.context.meta_reference;
   const deepMeta=report.context.hero_analysis,performance=report.context.performance;
   if(deepMeta||performance){
-    const meta=section('Seu jogo diante das referências do OpenDota');
+    const meta=el('details','panel');meta.append(el('summary','','Comparar meus números com outras partidas'));
     if(performance?.rows?.length){const grid=el('div','report-grid');for(const row of performance.rows){const cell=el('div','metric');cell.append(el('span','',row.label),el('b','',String(row.observed)),el('span','','Mediana agregada: '+Math.round(row.median*10)/10+' · diferença '+(row.delta>0?'+':'')+row.delta));grid.append(cell);}meta.append(grid,el('p','hint',performance.scope));}
     const rankNames={1:'Herald',2:'Guardian',3:'Crusader',4:'Archon',5:'Legend',6:'Ancient',7:'Divine',8:'Immortal'};
     const rank=deepMeta?.rank_stats;
@@ -70,13 +70,13 @@ export function renderReport(report) {
       for(const m of deepMeta.matches??[]){const link=el('a','source-link','Partida da amostra #'+m.match_id+' · '+date(new Date(m.start_time*1000).toISOString()));link.href=safeLink(m.url);link.target='_blank';link.rel='noopener noreferrer';meta.append(link);}
     }root.append(meta);
   }
-  if(reference){const meta=section('Referência de meta');meta.append(el('p','report-context',reference.population),el('p','report-context',reference.note));for(const [label,url]of [['Consultar meta no Dota2ProTracker',reference.url],['Consultar '+report.hero+' na fonte',reference.hero_url]]){const link=el('a','source-link',label);link.href=safeLink(url);link.target='_blank';link.rel='noopener noreferrer';meta.append(link);}meta.append(el('p','hint','Disponibilidade conferida em '+reference.checked_at+' · sem importação automática.'));root.append(meta);}
+  if(reference){const meta=el('details','panel');meta.append(el('summary','','Consultar referências de meta'));meta.append(el('p','report-context',reference.population),el('p','report-context',reference.note));for(const [label,url]of [['Consultar meta no Dota2ProTracker',reference.url],['Consultar '+report.hero+' na fonte',reference.hero_url]]){const link=el('a','source-link',label);link.href=safeLink(url);link.target='_blank';link.rel='noopener noreferrer';meta.append(link);}meta.append(el('p','hint','Disponibilidade conferida em '+reference.checked_at+' · sem importação automática.'));root.append(meta);}
   const context = section('Fontes e limites da análise');
   const matchSource=el('a','source-link','OpenDota · eventos da partida #'+report.match_id);matchSource.href='https://www.opendota.com/matches/'+encodeURIComponent(report.match_id);matchSource.target='_blank';matchSource.rel='noopener noreferrer';context.append(matchSource);
   context.append(el('p', 'report-context', report.context.hero_analysis?.sample_size ? report.context.hero_analysis.sample_size + ' partidas comparáveis. Os detalhes estão abaixo.' : 'Sem amostra externa comparável. A aula usa os eventos desta partida.'));
   const details = el('details'); details.className='technical-context';
   details.append(el('summary', '', 'Consultar patch, referências e limitações'));
-  details.append(el('p', 'report-context', a.patch_context));
+  details.append(el('p', 'report-context', a.patch_context),el('p','report-context',report.model+' · confiança '+a.confidence+' · '+report.coverage));
   const deep=report.context.hero_analysis;
   if (deep?.item_timings?.length) {
     details.append(el('h4','','Timings de referência'),list(deep.item_timings.map(x=>x.item + ': mediana ' + time(x.median_seconds) + ' · ' + x.sample_size + '/' + x.denominator + ' logs; nesta partida ' + (x.observed_seconds===null?'sem evento':time(x.observed_seconds)))));
