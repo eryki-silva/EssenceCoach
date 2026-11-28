@@ -1,0 +1,42 @@
+.print-only{display:none}
+@page{
+ size:A4;margin:17mm 18mm 19mm;
+ @bottom-left{content:"ESSENCE  /  DOTA 2";font:8pt Arial,sans-serif;color:#786e62}
+ @bottom-right{content:counter(page);font:9pt Arial,sans-serif;color:#9b3e2d}
+}
+@media print{
+ html,body{font-family:Arial,sans-serif!important;color:#292b2b!important;background:#fff!important}
+ #report{font-size:10pt;line-height:1.55;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+ #report .print-only{display:block!important}
+ #report .panel{margin:0 0 18pt!important;padding:0 0 16pt!important;border-bottom:1px solid #e3ded6!important;background:#fff!important;color:#292b2b!important}
+ #report .report-intro{border-top:4pt solid #ae4030!important;border-bottom:0!important;padding:20pt 22pt 18pt!important;background:#f6f2eb!important;margin-bottom:20pt!important;break-inside:avoid}
+ #report .print-masthead{display:flex!important;align-items:center;justify-content:space-between;gap:14pt;border-bottom:1px solid #d7c9b8;padding-bottom:13pt;margin-bottom:20pt}
+ #report .print-masthead b{font:700 17pt Georgia,serif;letter-spacing:3pt;color:#292b2b}
+ #report .print-masthead span{font:7pt Arial,sans-serif;letter-spacing:1pt;color:#806c56;text-align:right}
+ #report .report-head h2{font:30pt/1.15 Georgia,serif!important;letter-spacing:-.6pt;color:#282a29!important;margin:6pt 0 10pt}
+ #report .report-head p{font:8.5pt/1.5 Arial,sans-serif!important;color:#6c6257!important;margin:0 0 7pt}
+ #report .report-summary{font:11pt/1.65 Arial,sans-serif!important;color:#3f403b!important;margin:15pt 0 0!important}
+ #report .eyebrow{font:700 8pt/1.5 Arial,sans-serif!important;letter-spacing:1.3pt;color:#a14430!important;margin:0 0 8pt}
+ #report .focus-panel{padding:13pt 17pt!important;background:#faf7f1!important;border:1px solid #e6dac8!important;border-left:3pt solid #b38951!important;break-inside:avoid}
+ #report h3{font:19pt/1.25 Georgia,serif!important;color:#292b2b!important;margin:0 0 14pt;break-after:avoid}
+ #report h4{font:700 9pt/1.4 Arial,sans-serif!important;text-transform:uppercase;letter-spacing:.6pt;color:#914430!important;margin:16pt 0 7pt}
+ #report .coach-lesson{break-inside:avoid;padding:16pt 0 20pt!important;margin:0 0 16pt!important;border-bottom:1px solid #ded7cb!important}
+ #report .coach-lesson:last-child{padding-bottom:0!important;margin-bottom:0!important;border:0!important}
+ #report .coach-lesson h3{font-size:17pt!important;margin-bottom:12pt!important}
+ #report .coach-prose,#report li{font:10pt/1.65 Arial,sans-serif!important;color:#383b38!important;max-width:none;margin:0 0 11pt}
+ #report .coach-example{padding:12pt 14pt!important;border-left:2pt solid #b44b32!important;border-radius:0!important;background:#f7f1e8!important;break-inside:avoid}
+ #report .print-nuance{border-top:1px solid #e8e2d7;padding-top:9pt;margin-top:12pt}
+ #report .print-nuance b{font:700 8pt Arial,sans-serif;color:#806c56;text-transform:uppercase;letter-spacing:.5pt}
+ #report .print-nuance p{font:9pt/1.55 Arial,sans-serif!important;color:#68645b!important;margin:5pt 0 0}
+ #report ul{padding-left:16pt;margin:8pt 0 0}
+ #report li{padding-left:3pt;margin-bottom:9pt;break-inside:avoid}
+ #report .sources-panel{break-inside:avoid;border-top:2pt solid #b38951!important;border-bottom:0!important;padding-top:14pt!important}
+ #report .sources-panel h3{font-size:14pt!important;margin-bottom:9pt}
+ #report .print-source-note{font:8.5pt/1.6 Arial,sans-serif!important;color:#68645b!important;margin:0 0 10pt}
+ #report .sources-panel>.report-context{display:none!important}
+ #report .source-link{font:8pt/1.5 Arial,sans-serif!important;color:#914430!important}
+ #report a.source-link::after{font-size:7.5pt!important;color:#82776a!important}
+ #report button{display:none!important}
+ #report .farm-route-canvas{max-width:140mm!important;break-inside:avoid}
+ #report .farm-route-summary{font-size:9pt;color:#383b38!important}
+}

@@ -16,12 +16,14 @@ export function renderReport(report) {
   const root = $('report'); root.replaceChildren(); root.hidden = false;
   const a = report.analysis;
   const intro = el('section', 'panel');
+  intro.className+=' report-intro';
+  const masthead=el('div','print-only print-masthead');masthead.append(el('b','','ESSENCE'),el('span','','DOTA 2 / CADERNO DE EVOLUÇÃO'));intro.append(masthead);
   const header = el('div', 'report-head'), titles = el('div');
   titles.append(el('p', 'eyebrow', 'SEU RELATÓRIO'), el('h2', '', `${report.hero} · #${report.match_id}`), el('p', '', `Sua aula · ${date(report.generated_at)}`));
   header.append(titles);
   intro.append(header); prose(intro,a.summary,'report-summary');
   root.append(intro);
-  const plan=section('Seu foco para a próxima partida');prose(plan,a.game_plan || a.summary);root.append(plan);
+  const plan=section('Seu foco para a próxima partida');plan.className+=' focus-panel';prose(plan,a.game_plan || a.summary);root.append(plan);
   if (a.lessons?.length) {
     const classroom=section('Vamos rever sua partida');
     for (const lesson of a.lessons) {
@@ -30,6 +32,7 @@ export function renderReport(report) {
       prose(article,lesson.teaching);
       article.append(el('h4','','O que tentar nesse momento'));prose(article,lesson.application,'coach-prose coach-example');
       const nuance=el('details');nuance.append(el('summary','','Quando faria sentido jogar diferente?'));prose(nuance,lesson.exception,'coach-prose coach-tradeoff');article.append(nuance);
+      const printNuance=el('div','print-only print-nuance');printNuance.append(el('b','','Quando adaptar'));prose(printNuance,lesson.exception);article.append(printNuance);
       if (lesson.time!==null && replaySession.data) { const watch=el('button','secondary','Ver este lance no mapa');watch.type='button';watch.addEventListener('click',()=>replaySession.view?.seek(Math.max(0,lesson.time-15)));article.append(watch); }
       const proof=el('details');proof.append(el('summary','',lesson.time===null?'O que os dados mostram':'O que os dados mostram · '+time(lesson.time)));
       const briefs=(report.context.decision_briefs??[]).filter(b=>lesson.evidence_ids.includes(b.evidence_id));
@@ -72,6 +75,8 @@ export function renderReport(report) {
   }
   if(reference){const meta=el('details','panel');meta.append(el('summary','','Consultar referências de meta'));meta.append(el('p','report-context',reference.population),el('p','report-context',reference.note));for(const [label,url]of [['Consultar meta no Dota2ProTracker',reference.url],['Consultar '+report.hero+' na fonte',reference.hero_url]]){const link=el('a','source-link',label);link.href=safeLink(url);link.target='_blank';link.rel='noopener noreferrer';meta.append(link);}meta.append(el('p','hint','Disponibilidade conferida em '+reference.checked_at+' · sem importação automática.'));root.append(meta);}
   const context = section('Fontes e limites da análise');
+  context.className+=' sources-panel';
+  context.append(el('p','print-only print-source-note','Dados: OpenDota e replay, quando disponível. Consulta em '+date(report.generated_at)+'. '+(report.context.hero_analysis?.sample_size?report.context.hero_analysis.sample_size+' partidas de referência; comparações não controlam todas as diferenças entre jogadores.':'Sem amostra externa comparável; orientações baseadas nos registros desta partida.')+' Ausência de um evento não comprova erro. As orientações devem ser revistas junto do replay.'));
   const matchSource=el('a','source-link','OpenDota · eventos da partida #'+report.match_id);matchSource.href='https://www.opendota.com/matches/'+encodeURIComponent(report.match_id);matchSource.target='_blank';matchSource.rel='noopener noreferrer';context.append(matchSource);
   context.append(el('p', 'report-context', report.context.hero_analysis?.sample_size ? report.context.hero_analysis.sample_size + ' partidas comparáveis. Os detalhes estão abaixo.' : 'Sem amostra externa comparável. A aula usa os eventos desta partida.'));
   const details = el('details'); details.className='technical-context';
@@ -99,7 +104,7 @@ export function renderReport(report) {
   const pdf = el('button', 'primary', 'Salvar relatório em PDF'); pdf.type = 'button';
   pdf.addEventListener('click', () => {
     const previousTitle = document.title;
-    document.title = 'Dota Coach - ' + report.hero + ' - partida ' + report.match_id;
+    document.title = 'Essence - ' + report.hero + ' - partida ' + report.match_id;
     const restore = () => { document.title = previousTitle; };
     window.addEventListener('afterprint', restore, { once: true });
     try { window.print(); } catch { restore(); notify('Não foi possível abrir a impressão. Use Ctrl + P e escolha Salvar como PDF.', true); }

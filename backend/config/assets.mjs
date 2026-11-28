@@ -1,5 +1,6 @@
 // Explicit public assets; no filesystem paths from requests.
 export const assets={
+  "/styles/print.css":["styles/print.css","text/css; charset=utf-8"],
   "/features/replays/prepare.js":["features/replays/prepare.js","text/javascript; charset=utf-8"],
   "/features/replays/route-data.js":["features/replays/route-data.js","text/javascript; charset=utf-8"],
   "/styles/studio.css":["styles/studio.css","text/css; charset=utf-8"],
